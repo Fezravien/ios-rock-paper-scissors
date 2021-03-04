@@ -6,52 +6,38 @@
 enum GameRestart: Error {
     case inputValue
     case beginAgain
-}
-enum UserSideGameResult: String {
-    case win = "이겼습니다!"
-    case lose = "졌습니다!"
-    case draw = "비겼습니다!"
-}
-enum HandShape: Int {
-    case rock = 1, scissors = 2, paper = 3
-}
-enum GameStatus: Int {
-    case initHandValue = -1
-    case endGameValue = 0
-}
-enum UserResultSituation: Int {
-    case SelectWinRockScissors = 1
-    case SelectWinScissors = -2
-    case SelectLoseScissorsRock = -1
-    case SelectLosePaper = 2
-    case SelectDraw = 0
+    case unknown
 }
 
 struct Hand {
-    static let rock = HandShape.rock.rawValue
-    static let scissors = HandShape.scissors.rawValue
-    static let paper = HandShape.paper.rawValue
+    static let rock = 1
+    static let scissors = 2
+    static let paper = 3
 }
 struct GameResult {
-    static let win = UserSideGameResult.win.rawValue
-    static let lose = UserSideGameResult.lose.rawValue
-    static let draw = UserSideGameResult.draw.rawValue
+    static let win = "이겼습니다!"
+    static let lose = "졌습니다!"
+    static let draw = "비겼습니다!"
 }
 struct GameConditions {
-    static let endGame = GameStatus.endGameValue.rawValue
-    static let initValue = GameStatus.initHandValue.rawValue
-    static let userSelectWinRockScissors = UserResultSituation.SelectWinRockScissors.rawValue
-    static let userSelectWinScissors = UserResultSituation.SelectWinScissors.rawValue
-    static let userSelectLoseScissorsRock = UserResultSituation.SelectLoseScissorsRock.rawValue
-    static let userSelectLosePaper = UserResultSituation.SelectLosePaper.rawValue
-    static let userSelectDraw = UserResultSituation.SelectDraw.rawValue
+    static let endGame = 0
+    static let initValue = -1
 }
+struct WinLoseDrawOfUserAtRockScissorsPaper {
+    static let userSelectWinRockScissors = 1
+    static let userSelectWinScissors = -2
+    static let userSelectLoseScissorsRock = -1
+    static let userSelectLosePaper = 2
+    static let userSelectDraw = 0
+}
+
+// MARK: - RockScissorsPaperGame Class
 
 class RockScissorsPaperGame {
     var userInput = GameConditions.initValue
     func startGame() {
         for _ in 0...Int.max {
-            print("가위(1), 바위(2), 보(3)! <종료 : 0> : ", terminator: "")
+            gameMenuPresent()
             let computerNumber = createRandomNumber()
             do {
                 userInput = try userTyping()
@@ -60,7 +46,8 @@ class RockScissorsPaperGame {
                 continue
             }
             do {
-                try judgeRockScissorsPaper(userNumber: userInput, computerNumber: computerNumber)
+                let judgedGame = try judgeGames(userNumber: userInput, computerNumber: computerNumber)
+                MukChiPaGame(mukChiPaTurn: judgedGame).startGame()
             } catch {
                 print(GameResult.draw)
                 continue
@@ -68,11 +55,7 @@ class RockScissorsPaperGame {
             break
         }
     }
-}
-
-/// 메인 동작과 서브 동작을 구분하기 위해서 extension으로 확장
-extension RockScissorsPaperGame {
-
+    
     // MARK: - Computer Number
     
     func createRandomNumber() -> Int {
@@ -112,22 +95,25 @@ extension RockScissorsPaperGame {
     
     // MARK: - Game judge
     
-    func judgeRockScissorsPaper(userNumber userState: Int, computerNumber computerState: Int) throws {
+    func judgeGames(userNumber userState: Int, computerNumber computerState: Int) throws -> String {
         let decisionStatus = userState - computerState
-        let userWinStatus = [GameConditions.userSelectWinRockScissors, GameConditions.userSelectWinScissors]
-        let computerWinStatus = [GameConditions.userSelectLoseScissorsRock, GameConditions.userSelectLosePaper]
-        let userComputerDraw = GameConditions.userSelectDraw
-        if userState == userComputerDraw {
-            finishGame()
+        let userWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinRockScissors, WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinScissors]
+        let computerWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectLoseScissorsRock, WinLoseDrawOfUserAtRockScissorsPaper.userSelectLosePaper]
+        let userComputerDraw = WinLoseDrawOfUserAtRockScissorsPaper.userSelectDraw
+        if userState == GameConditions.endGame {
+            return finishGame()
         } else if decisionStatus == userComputerDraw {
             throw GameRestart.beginAgain
         } else {
             if userWinStatus.contains(decisionStatus) {
                 print(GameResult.win)
+                return "User"
             } else if computerWinStatus.contains(decisionStatus) {
                 print(GameResult.lose)
+                return "Computer"
             }
         }
+        throw GameRestart.unknown
     }
     
     // MARK: - Error
@@ -135,9 +121,75 @@ extension RockScissorsPaperGame {
     func printError() {
         print("잘못된 입력입니다. 다시 시도해주세요.")
     }
-    func finishGame() {
-        print("게임 종료")
-        return
+    func finishGame() -> String{
+        return "게임 종료"
+    }
+    
+    // MARK: - RockScissorsPaper Print
+    func gameMenuPresent() {
+        print("가위(1), 바위(2), 보(3)! <종료 : 0> : ", terminator: "")
+    }
+}
+
+// MARK: - MukChiPaGame Class
+
+class MukChiPaGame: RockScissorsPaperGame {
+    var mukChiPaTurn: String = ""
+    init(mukChiPaTurn: String) {
+        self.mukChiPaTurn = mukChiPaTurn
+    }
+    
+    override func startGame() {
+        for _ in 0...Int.max {
+            gameMenuPresent()
+            let computerNumber = createRandomNumber()
+            do {
+                userInput = try userTyping()
+            } catch {
+                printError()
+                continue
+            }
+            do {
+                _ = try judgeGames(userNumber: userInput, computerNumber: computerNumber)
+                print("\(mukChiPaTurn)의 승리!")
+            } catch {
+                turnCheckPresent()
+                continue
+            }
+            break
+        }
+    }
+    
+    // MARK: - Game judge
+    
+    override func judgeGames(userNumber userState: Int, computerNumber computerState: Int) throws -> String {
+        let decisionStatus = userState - computerState
+        let userWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinRockScissors, WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinScissors]
+        let computerWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectLoseScissorsRock, WinLoseDrawOfUserAtRockScissorsPaper.userSelectLosePaper]
+        let userComputerDraw = WinLoseDrawOfUserAtRockScissorsPaper.userSelectDraw
+        if userState == GameConditions.endGame {
+            return finishGame()
+        } else if decisionStatus == userComputerDraw {
+            return GameResult.win
+        } else {
+            if userWinStatus.contains(decisionStatus) {
+                mukChiPaTurn = "User"
+                throw GameRestart.beginAgain
+            } else if computerWinStatus.contains(decisionStatus) {
+                mukChiPaTurn = "Computer"
+                throw GameRestart.beginAgain
+            }
+        }
+        throw GameRestart.unknown
+    }
+    
+    // MARK: - MukChiPa Print
+    
+    override func gameMenuPresent() {
+        print("[\(mukChiPaTurn) 턴] 묵(1), 찌(2), 빠(3)! <종료: 0>", terminator: " : ")
+    }
+    func turnCheckPresent() {
+        print("\(mukChiPaTurn)의 턴입니다")
     }
 }
 
