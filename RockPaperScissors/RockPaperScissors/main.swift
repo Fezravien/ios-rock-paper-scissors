@@ -79,7 +79,7 @@ class RockScissorsPaperGame {
         }
         return validedInputNumber
     }
-    func isValidInput(needValidInput userInput: String?) throws -> Int {
+    private func isValidInput(needValidInput userInput: String?) throws -> Int {
         var valiedNumber = GameConditions.initValue
         do {
             valiedNumber = try isCheckedInput(needCheckInput: userInput)
@@ -88,7 +88,7 @@ class RockScissorsPaperGame {
         }
         return valiedNumber
     }
-    func isCheckedInput(needCheckInput userInput: String?) throws -> Int {
+    private func isCheckedInput(needCheckInput userInput: String?) throws -> Int {
         let validNumbers = [GameConditions.endGame, Hand.rock, Hand.scissors, Hand.paper]
         guard let validString = userInput, let validedNumber = Int(validString), validNumbers.contains(validedNumber) else {
             throw GameRestart.inputValue
@@ -100,8 +100,10 @@ class RockScissorsPaperGame {
     
     func judgeGames(userNumber userState: Int, computerNumber computerState: Int) throws -> String {
         let decisionStatus = userState - computerState
-        let userWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinRockScissors, WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinScissors]
-        let computerWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectLoseScissorsRock, WinLoseDrawOfUserAtRockScissorsPaper.userSelectLosePaper]
+        let userWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinRockScissors,
+                             WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinScissors]
+        let computerWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectLoseScissorsRock,
+                                 WinLoseDrawOfUserAtRockScissorsPaper.userSelectLosePaper]
         let userComputerDraw = WinLoseDrawOfUserAtRockScissorsPaper.userSelectDraw
         if userState == GameConditions.endGame {
             return finishGame()
@@ -124,11 +126,12 @@ class RockScissorsPaperGame {
     func printError() {
         print("잘못된 입력입니다. 다시 시도해주세요.")
     }
-    func finishGame() -> String{
+    func finishGame() -> String {
         return GameConditions.endGamePresent
     }
     
     // MARK: - RockScissorsPaper Print
+    
     func gameMenuPresent() {
         print("가위(1), 바위(2), 보(3)! <종료 : 0> : ", terminator: "")
     }
@@ -137,7 +140,7 @@ class RockScissorsPaperGame {
 // MARK: - MukChiPaGame Class
 
 class MukChiPaGame: RockScissorsPaperGame {
-    var mukChiPaTurn: String = ""
+    var mukChiPaTurn: String
     init(mukChiPaTurn: String) {
         self.mukChiPaTurn = mukChiPaTurn
     }
@@ -171,8 +174,10 @@ class MukChiPaGame: RockScissorsPaperGame {
     
     override func judgeGames(userNumber userState: Int, computerNumber computerState: Int) throws -> String {
         let decisionStatus = userState - computerState
-        let userWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinRockScissors, WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinScissors]
-        let computerWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectLoseScissorsRock, WinLoseDrawOfUserAtRockScissorsPaper.userSelectLosePaper]
+        let userWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinRockScissors,
+                             WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinScissors]
+        let computerWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectLoseScissorsRock,
+                                 WinLoseDrawOfUserAtRockScissorsPaper.userSelectLosePaper]
         let userComputerDraw = WinLoseDrawOfUserAtRockScissorsPaper.userSelectDraw
         if userState == GameConditions.endGame {
             return finishGame()
@@ -194,9 +199,6 @@ class MukChiPaGame: RockScissorsPaperGame {
     
     override func gameMenuPresent() {
         print("[\(mukChiPaTurn) 턴] 묵(1), 찌(2), 빠(3)! <종료: 0>", terminator: " : ")
-    }
-    override func finishGame() -> String {
-        return super.finishGame()
     }
     func turnCheckPresent() {
         print("\(mukChiPaTurn)의 턴입니다")
