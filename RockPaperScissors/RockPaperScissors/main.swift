@@ -7,37 +7,40 @@ enum GameRestart: Error {
     case inputValue
     case beginAgain
     case unknown
+    case exit
 }
-
-struct Hand {
-    static let rock = 1
-    static let scissors = 2
-    static let paper = 3
+enum Hand: Int, CaseIterable {
+    case rock = 1
+    case scissors = 2
+    case paper = 3
+    case initHand = 0
 }
-struct GameResult {
-    static let win = "이겼습니다!"
-    static let lose = "졌습니다!"
-    static let draw = "비겼습니다!"
+enum GameResult: String {
+    case win = "이겼습니다!"
+    case lose = "졌습니다!"
+    case draw = "비겼습니다!"
 }
-struct GameConditions {
-    static let endGame = 0
-    static let initValue = -1
-    static let userTurn = "User"
-    static let computerTurn = "Computer"
-    static let endGamePresent = "게임 종료"
+enum GameConditionNumbers: Int {
+    case endGame = 0
+    case initValue = -1
 }
-struct WinLoseDrawOfUserAtRockScissorsPaper {
-    static let userSelectWinRockScissors = 1
-    static let userSelectWinScissors = -2
-    static let userSelectLoseScissorsRock = -1
-    static let userSelectLosePaper = 2
-    static let userSelectDraw = 0
+enum GameConditionStrings: String {
+    case userTurn = "User"
+    case computerTurn = "Computer"
+    case endGamePresent = "게임 종료"
+}
+enum JudgeOfUserAtRockscissorsPaper: Int {
+    case userSelectWinRockScissors = 1
+    case userSelectWinScissors = -2
+    case userSelectLoseScissorsRock = -1
+    case userSelectLosePaper = 2
+    case userSelectDraw = 0
 }
 
 // MARK: - RockScissorsPaperGame Class
 
 class RockScissorsPaperGame {
-    var userInput = GameConditions.initValue
+    var userInput: Hand = .initHand
     func startGame() {
         for _ in 0...Int.max {
             gameMenuPresent()
@@ -51,9 +54,12 @@ class RockScissorsPaperGame {
             do {
                 let judgedGame = try judgeGames(userNumber: userInput, computerNumber: computerNumber)
                 MukChiPaGame(mukChiPaTurn: judgedGame).startGame()
-            } catch {
-                print(GameResult.draw)
+            } catch GameRestart.exit {
+                break
+            } catch GameRestart.beginAgain {
+                printJudge(gameResult: .draw)
                 continue
+            } catch {
             }
             break
         }
@@ -61,16 +67,15 @@ class RockScissorsPaperGame {
     
     // MARK: - Computer Number
     
-    func createRandomNumber() -> Int {
-        let rock1Scissors2Paper3 = 1...3
-        let computerRandomNumber = Int.random(in: rock1Scissors2Paper3)
-        return computerRandomNumber
+    func createRandomNumber() -> Hand {
+        let rock1Scissors2Paper3 = Hand.allCases.map { $0 }[Int.random(in: 1...3)]
+        return rock1Scissors2Paper3
     }
     
     // MARK: - User input valid check
     
-    func userTyping() throws -> Int {
-        var validedInputNumber = GameConditions.initValue
+    func userTyping() throws -> Hand {
+        var validedInputNumber: Hand = .initHand
         let optionalInput = readLine()
         do {
             validedInputNumber = try isValidInput(needValidInput: optionalInput)
@@ -79,8 +84,8 @@ class RockScissorsPaperGame {
         }
         return validedInputNumber
     }
-    private func isValidInput(needValidInput userInput: String?) throws -> Int {
-        var valiedNumber = GameConditions.initValue
+    private func isValidInput(needValidInput userInput: String?) throws -> Hand {
+        var valiedNumber: Hand = .initHand
         do {
             valiedNumber = try isCheckedInput(needCheckInput: userInput)
         } catch {
@@ -88,34 +93,40 @@ class RockScissorsPaperGame {
         }
         return valiedNumber
     }
-    private func isCheckedInput(needCheckInput userInput: String?) throws -> Int {
-        let validNumbers = [GameConditions.endGame, Hand.rock, Hand.scissors, Hand.paper]
-        guard let validString = userInput, let validedNumber = Int(validString), validNumbers.contains(validedNumber) else {
+    private func isCheckedInput(needCheckInput userInput: String?) throws -> Hand {
+        let validNumbers = Hand.allCases.map { $0.rawValue }
+        guard let validString = userInput,
+              let validedNumber = Int(validString),
+              validNumbers.contains(validedNumber),
+              let validedHandValue = Hand(rawValue: validedNumber) else {
+            
             throw GameRestart.inputValue
         }
-        return validedNumber
+        return validedHandValue
     }
     
     // MARK: - Game judge
     
-    func judgeGames(userNumber userState: Int, computerNumber computerState: Int) throws -> String {
-        let decisionStatus = userState - computerState
-        let userWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinRockScissors,
-                             WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinScissors]
-        let computerWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectLoseScissorsRock,
-                                 WinLoseDrawOfUserAtRockScissorsPaper.userSelectLosePaper]
-        let userComputerDraw = WinLoseDrawOfUserAtRockScissorsPaper.userSelectDraw
-        if userState == GameConditions.endGame {
-            return finishGame()
+    func judgeGames(userNumber userState: Hand, computerNumber computerState: Hand) throws -> GameConditionStrings {
+        guard let decisionStatus = JudgeOfUserAtRockscissorsPaper(rawValue: userState.rawValue - computerState.rawValue) else {
+            throw GameRestart.unknown
+        }
+        let userWinStatus: [JudgeOfUserAtRockscissorsPaper] = [.userSelectWinRockScissors, .userSelectWinScissors]
+        let computerWinStatus: [JudgeOfUserAtRockscissorsPaper] = [.userSelectLoseScissorsRock, .userSelectLosePaper]
+        let userComputerDraw: JudgeOfUserAtRockscissorsPaper = .userSelectDraw
+        if userState == .initHand {
+            finishGame()
+            throw GameRestart.exit
         } else if decisionStatus == userComputerDraw {
+            printJudge(gameResult: .draw)
             throw GameRestart.beginAgain
         } else {
             if userWinStatus.contains(decisionStatus) {
-                print(GameResult.win)
-                return GameConditions.userTurn
+                printJudge(gameResult: .win)
+                return .userTurn
             } else if computerWinStatus.contains(decisionStatus) {
-                print(GameResult.lose)
-                return GameConditions.computerTurn
+                printJudge(gameResult: .lose)
+                return .computerTurn
             }
         }
         throw GameRestart.unknown
@@ -126,8 +137,11 @@ class RockScissorsPaperGame {
     func printError() {
         print("잘못된 입력입니다. 다시 시도해주세요.")
     }
-    func finishGame() -> String {
-        return GameConditions.endGamePresent
+    func finishGame() {
+        print(GameConditionStrings.endGamePresent.rawValue)
+    }
+    func printJudge(gameResult: GameResult) {
+        print(gameResult.rawValue)
     }
     
     // MARK: - RockScissorsPaper Print
@@ -140,8 +154,8 @@ class RockScissorsPaperGame {
 // MARK: - MukChiPaGame Class
 
 class MukChiPaGame: RockScissorsPaperGame {
-    var mukChiPaTurn: String
-    init(mukChiPaTurn: String) {
+    var mukChiPaTurn: GameConditionStrings
+    init(mukChiPaTurn: GameConditionStrings) {
         self.mukChiPaTurn = mukChiPaTurn
     }
     
@@ -157,14 +171,19 @@ class MukChiPaGame: RockScissorsPaperGame {
             }
             do {
                 let judgeString = try judgeGames(userNumber: userInput, computerNumber: computerNumber)
-                guard judgeString != GameConditions.endGamePresent else {
+                guard judgeString != .endGamePresent else {
                     print(judgeString)
                     break
                 }
                 print("\(mukChiPaTurn)의 승리!")
-            } catch {
+            } catch GameRestart.exit {
+                break
+                
+            } catch GameRestart.beginAgain {
                 turnCheckPresent()
                 continue
+            } catch {
+                
             }
             break
         }
@@ -172,23 +191,25 @@ class MukChiPaGame: RockScissorsPaperGame {
     
     // MARK: - Game judge
     
-    override func judgeGames(userNumber userState: Int, computerNumber computerState: Int) throws -> String {
-        let decisionStatus = userState - computerState
-        let userWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinRockScissors,
-                             WinLoseDrawOfUserAtRockScissorsPaper.userSelectWinScissors]
-        let computerWinStatus = [WinLoseDrawOfUserAtRockScissorsPaper.userSelectLoseScissorsRock,
-                                 WinLoseDrawOfUserAtRockScissorsPaper.userSelectLosePaper]
-        let userComputerDraw = WinLoseDrawOfUserAtRockScissorsPaper.userSelectDraw
-        if userState == GameConditions.endGame {
-            return finishGame()
+    override func judgeGames(userNumber userState: Hand, computerNumber computerState: Hand) throws -> GameConditionStrings {
+        guard let decisionStatus = JudgeOfUserAtRockscissorsPaper(rawValue: userState.rawValue - computerState.rawValue) else {
+            throw GameRestart.unknown
+        }
+        let userWinStatus: [JudgeOfUserAtRockscissorsPaper] = [.userSelectWinRockScissors, .userSelectWinScissors]
+        let computerWinStatus: [JudgeOfUserAtRockscissorsPaper] = [.userSelectLoseScissorsRock, .userSelectLosePaper]
+        let userComputerDraw: JudgeOfUserAtRockscissorsPaper = .userSelectDraw
+        if userState == .initHand {
+            finishGame()
+            throw GameRestart.exit
         } else if decisionStatus == userComputerDraw {
-            return GameResult.win
+            printJudge(gameResult: .win)
+            throw GameRestart.exit
         } else {
             if userWinStatus.contains(decisionStatus) {
-                mukChiPaTurn = GameConditions.userTurn
+                mukChiPaTurn = .userTurn
                 throw GameRestart.beginAgain
             } else if computerWinStatus.contains(decisionStatus) {
-                mukChiPaTurn = GameConditions.computerTurn
+                mukChiPaTurn = .computerTurn
                 throw GameRestart.beginAgain
             }
         }
