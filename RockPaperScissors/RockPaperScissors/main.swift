@@ -55,9 +55,9 @@ class RockScissorsPaperGame {
             } catch GameRestart.exit {
                 break
             } catch GameRestart.beginAgain {
-                printJudge(gameResult: .draw)
                 continue
             } catch {
+                continue
             }
             break
         }
@@ -181,7 +181,7 @@ class MukChiPaGame: RockScissorsPaperGame {
                 turnCheckPresent()
                 continue
             } catch {
-                
+                continue
             }
             break
         }
